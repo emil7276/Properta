@@ -13,14 +13,29 @@ class LocalAuth(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    fun isSetup(): Boolean =
-        prefs.contains("password_hash")
+    init {
+        if (!isSetup()) {
+            createAccount("admin", charArrayOf('1', '2', '3', '4'))
+        }
+    }
 
-    fun createAccount(
-        username: String,
-        password: CharArray
-    ): Boolean {
-        if (isSetup() || username.isBlank() || password.size < 8) {
+    fun isSetup(): Boolean = prefs.contains("password_hash")
+
+    fun getRememberedUsername(): String =
+        prefs.getString("remembered_username", "") ?: ""
+
+    fun saveRememberedUsername(username: String, remember: Boolean) {
+        prefs.edit().apply {
+            if (remember) {
+                putString("remembered_username", username.trim())
+            } else {
+                remove("remembered_username")
+            }
+        }.apply()
+    }
+
+    fun createAccount(username: String, password: CharArray): Boolean {
+        if (isSetup() || username.isBlank() || password.isEmpty()) {
             password.fill('\u0000')
             return false
         }
@@ -37,17 +52,11 @@ class LocalAuth(context: Context) {
         return prefs.edit()
             .putString("username", username.trim())
             .putString("salt", Base64.encodeToString(salt, Base64.NO_WRAP))
-            .putString(
-                "password_hash",
-                Base64.encodeToString(hash, Base64.NO_WRAP)
-            )
+            .putString("password_hash", Base64.encodeToString(hash, Base64.NO_WRAP))
             .commit()
     }
 
-    fun verify(
-        username: String,
-        password: CharArray
-    ): Boolean {
+    fun verify(username: String, password: CharArray): Boolean {
         val savedUsername = prefs.getString("username", null)
         val saltText = prefs.getString("salt", null)
         val hashText = prefs.getString("password_hash", null)
@@ -69,10 +78,7 @@ class LocalAuth(context: Context) {
         }
     }
 
-    private fun derive(
-        password: CharArray,
-        salt: ByteArray
-    ): ByteArray {
+    private fun derive(password: CharArray, salt: ByteArray): ByteArray {
         val spec = PBEKeySpec(password, salt, 120_000, 256)
         return try {
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")

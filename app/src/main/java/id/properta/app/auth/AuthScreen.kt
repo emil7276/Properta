@@ -12,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Stroke
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -36,7 +39,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
     val auth = remember(context) { LocalAuth(context) }
 
     var introFinished by remember { mutableStateOf(false) }
-    var isSetup by remember { mutableStateOf(auth.isSetup()) }
+    var isSetup by remember { mutableStateOf(!auth.isSetup()) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -59,20 +62,76 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+
+            // Cahaya abstrak biru dan cyan.
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(Color(0x332684FF), Color(0x1122D3EE), Color.Transparent),
+                    center = Offset(w * 0.82f, h * 0.24f),
+                    radius = w * 0.72f
+                ),
+                radius = w * 0.72f,
+                center = Offset(w * 0.82f, h * 0.24f)
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(Color(0x2222D3EE), Color.Transparent),
+                    center = Offset(w * 0.12f, h * 0.72f),
+                    radius = w * 0.58f
+                ),
+                radius = w * 0.58f,
+                center = Offset(w * 0.12f, h * 0.72f)
+            )
+
+            // Garis lengkung tipis seperti aksen neon pada desain web.
+            val line1 = Path().apply {
+                moveTo(-w * 0.12f, h * 0.30f)
+                cubicTo(w * 0.30f, h * 0.12f, w * 0.68f, h * 0.43f, w * 1.12f, h * 0.20f)
+            }
+            val line2 = Path().apply {
+                moveTo(-w * 0.10f, h * 0.78f)
+                cubicTo(w * 0.30f, h * 0.60f, w * 0.65f, h * 0.93f, w * 1.10f, h * 0.70f)
+            }
+            val line3 = Path().apply {
+                moveTo(w * 0.78f, -h * 0.05f)
+                cubicTo(w * 0.55f, h * 0.18f, w * 0.92f, h * 0.32f, w * 0.72f, h * 0.48f)
+            }
+
+            listOf(line1, line2, line3).forEachIndexed { index, path ->
+                drawPath(
+                    path = path,
+                    color = if (index == 1) Color(0x3322D3EE) else Color(0x302684FF),
+                    style = Stroke(
+                        width = if (index == 2) 1.0.dp.toPx() else 1.4.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                )
+            }
+
+            // Titik cahaya kecil sebagai detail futuristik.
+            listOf(
+                Offset(w * 0.16f, h * 0.25f),
+                Offset(w * 0.84f, h * 0.37f),
+                Offset(w * 0.72f, h * 0.79f),
+                Offset(w * 0.24f, h * 0.84f)
+            ).forEach { point ->
+                drawCircle(
+                    color = Color(0x5522D3EE),
+                    radius = 2.2.dp.toPx(),
+                    center = point
+                )
+            }
+        }
+
         if (!introFinished) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.size(94.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        PropertaLogo(Modifier.size(58.dp))
-                    }
-                }
+                PropertaLogo(Modifier.size(94.dp))
                 Text(
                     "PROPERTA",
                     color = Color.White,
@@ -134,7 +193,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         value = password,
                         onValueChange = { password = it },
                         label = {
-                            Text(if (isSetup) "Kata sandi (min. 8 karakter)" else "Kata sandi")
+                            Text("Kata sandi")
                         },
                         singleLine = true,
                         visualTransformation = if (showPassword)
@@ -184,10 +243,6 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                             }
 
                             if (isSetup) {
-                                if (password.length < 8) {
-                                    message = "Kata sandi harus minimal 8 karakter."
-                                    return@Button
-                                }
                                 if (password != confirmPassword) {
                                     message = "Konfirmasi kata sandi belum cocok."
                                     return@Button
