@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.properta.app.auth.AuthScreen
+import id.properta.app.ui.TenantScreen
 import id.properta.app.data.PropertaRepository
 import id.properta.app.data.local.PropertaDatabase
 import id.properta.app.ui.PropertyViewModel

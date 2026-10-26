@@ -1,5 +1,7 @@
 package id.properta.app.auth
 
+import id.properta.app.ui.components.PropertaLogo
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -64,7 +70,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     modifier = Modifier.size(94.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("⌂", color = Color.White, fontSize = 58.sp)
+                        PropertaLogo(Modifier.size(58.dp))
                     }
                 }
                 Text(
@@ -76,7 +82,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 )
                 Text(
                     "Kelola Properti, Raih Lebih Banyak.",
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = AuthCyan,
                     textAlign = TextAlign.Center,
                     fontSize = 13.sp
                 )
