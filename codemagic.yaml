@@ -1,0 +1,24 @@
+workflows:
+  properta-android:
+    name: Properta Android APK
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Install Gradle
+        script: |
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          export PATH="/tmp/gradle-8.9/bin:$PATH"
+          gradle --version
+      - name: Install Android SDK components
+        script: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Build debug APK
+        script: |
+          export PATH="/tmp/gradle-8.9/bin:$PATH"
+          gradle assembleDebug
+    artifacts:
+      - app/build/outputs/**/*.apk
