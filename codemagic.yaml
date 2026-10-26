@@ -8,14 +8,17 @@ workflows:
     scripts:
       - name: Install Gradle
         script: |
-          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip -O /tmp/gradle.zip
+          curl -fL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp
           export PATH="/tmp/gradle-8.9/bin:$PATH"
           gradle --version
-      - name: Install Android SDK components
+      - name: Configure Android SDK
         script: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-not set}"
+          echo "ANDROID_HOME=${ANDROID_HOME:-not set}"
+          test -n "$ANDROID_SDK_ROOT" || test -n "$ANDROID_HOME"
+          SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=$SDK_PATH" > local.properties
       - name: Build debug APK
         script: |
           export PATH="/tmp/gradle-8.9/bin:$PATH"
