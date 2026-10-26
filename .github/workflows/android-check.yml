@@ -30,6 +30,7 @@ jobs:
 
       - name: Install Android SDK components
         run: |
+          yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Setup Gradle 8.9
