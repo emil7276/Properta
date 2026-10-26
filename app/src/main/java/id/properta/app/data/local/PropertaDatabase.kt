@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -11,15 +13,33 @@ import androidx.room.RoomDatabase
         RentalUnitEntity::class,
         TenantEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class PropertaDatabase : RoomDatabase() {
+
     abstract fun propertyDao(): PropertyDao
     abstract fun rentalUnitDao(): RentalUnitDao
     abstract fun tenantDao(): TenantDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE tenants ADD COLUMN identityType TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE tenants ADD COLUMN identityNumber TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE tenants ADD COLUMN identityAddress TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE tenants ADD COLUMN identityPhotoPath TEXT"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: PropertaDatabase? = null
 
@@ -29,7 +49,10 @@ abstract class PropertaDatabase : RoomDatabase() {
                     context.applicationContext,
                     PropertaDatabase::class.java,
                     "properta.db"
-                ).build().also { INSTANCE = it }
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }

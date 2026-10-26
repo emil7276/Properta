@@ -26,5 +26,9 @@ data class TenantEntity(
     val contractStart: Long? = null,
     val contractEnd: Long? = null,
     val deposit: Long = 0,
-    val notes: String = ""
+    val notes: String = "",
+    val identityType: String = "",
+    val identityNumber: String = "",
+    val identityAddress: String = "",
+    val identityPhotoPath: String? = null
 )

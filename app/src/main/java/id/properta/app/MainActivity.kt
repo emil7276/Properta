@@ -25,9 +25,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import id.properta.app.auth.AuthScreen
 import id.properta.app.data.PropertaRepository
 import id.properta.app.data.local.PropertaDatabase
 import id.properta.app.ui.PropertyViewModel
+import id.properta.app.ui.TenantViewModel
 import id.properta.app.ui.theme.*
 
 class MainActivity : ComponentActivity() {
@@ -46,14 +48,25 @@ class MainActivity : ComponentActivity() {
                 val propertyViewModel: PropertyViewModel = viewModel(
                     factory = PropertyViewModel.Factory(repository)
                 )
-                PropertaApp(propertyViewModel)
+                val tenantViewModel: TenantViewModel = viewModel(
+                    factory = TenantViewModel.Factory(repository)
+                )
+                var authenticated by remember { mutableStateOf(false) }
+                if (authenticated) {
+                    PropertaApp(propertyViewModel, tenantViewModel)
+                } else {
+                    AuthScreen(onAuthenticated = { authenticated = true })
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PropertaApp(viewModel: PropertyViewModel) {
+private fun PropertaApp(
+    viewModel: PropertyViewModel,
+    tenantViewModel: TenantViewModel
+) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Beranda", "Properti", "Penyewa", "Keuangan")
     val icons = listOf(
@@ -81,6 +94,7 @@ private fun PropertaApp(viewModel: PropertyViewModel) {
         when (selectedTab) {
             0 -> Dashboard(Modifier.padding(padding))
             1 -> PropertyScreen(viewModel, Modifier.padding(padding))
+            2 -> TenantScreen(tenantViewModel, Modifier.padding(padding))
             else -> PlaceholderScreen(tabs[selectedTab], Modifier.padding(padding))
         }
     }

@@ -30,6 +30,9 @@ interface RentalUnitDao {
     @Query("SELECT * FROM rental_units WHERE propertyId = :propertyId ORDER BY name")
     fun observeByProperty(propertyId: Long): Flow<List<RentalUnitEntity>>
 
+    @Query("SELECT * FROM rental_units ORDER BY name")
+    fun observeAll(): Flow<List<RentalUnitEntity>>
+
     @Insert
     suspend fun insert(unit: RentalUnitEntity): Long
 

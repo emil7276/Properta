@@ -43,6 +43,9 @@ class PropertaRepository(
     fun observeUnits(propertyId: Long): Flow<List<RentalUnitEntity>> =
         rentalUnitDao.observeByProperty(propertyId)
 
+    fun observeAllUnits(): Flow<List<RentalUnitEntity>> =
+        rentalUnitDao.observeAll()
+
     suspend fun addUnit(
         propertyId: Long,
         name: String,
@@ -84,7 +87,11 @@ class PropertaRepository(
         contractStart: Long? = null,
         contractEnd: Long? = null,
         deposit: Long = 0,
-        notes: String = ""
+        notes: String = "",
+        identityType: String = "",
+        identityNumber: String = "",
+        identityAddress: String = "",
+        identityPhotoPath: String? = null
     ): Long {
         require(fullName.isNotBlank()) { "Nama penyewa wajib diisi." }
         require(deposit >= 0) { "Deposit tidak boleh negatif." }
@@ -101,7 +108,11 @@ class PropertaRepository(
                 contractStart = contractStart,
                 contractEnd = contractEnd,
                 deposit = deposit,
-                notes = notes.trim()
+                notes = notes.trim(),
+                identityType = identityType.trim(),
+                identityNumber = identityNumber.trim(),
+                identityAddress = identityAddress.trim(),
+                identityPhotoPath = identityPhotoPath
             )
         )
     }
