@@ -1,18 +1,20 @@
-name: PROPERTA Android Check
+name: PROPERTA Android APK Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - codemagic-build
   pull_request:
-    branches: [main]
+    branches:
+      - codemagic-build
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  compile:
-    name: Compile Kotlin
+  build:
+    name: Build PROPERTA APK
     runs-on: ubuntu-latest
 
     steps:
@@ -33,10 +35,18 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Setup Gradle 8.9
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.9'
 
-      - name: Compile Kotlin sources
-        run: gradle :app:compileDebugKotlin
+      - name: Build Debug APK
+        run: gradle :app:assembleDebug
+
+      - name: Upload PROPERTA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROPERTA-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
