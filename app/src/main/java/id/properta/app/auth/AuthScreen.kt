@@ -58,13 +58,13 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                Brush.linearGradient(
                     listOf(
-                    Color(0xFF041126),
-                    Color(0xFF082A58),
-                    Color(0xFF123F78),
-                    Color(0xFF061630)
-                )
+                        Color(0xFF020817),
+                        Color(0xFF06172F),
+                        Color(0xFF0B2C55),
+                        Color(0xFF06152E)
+                    )
                 )
             ),
         contentAlignment = Alignment.Center
@@ -76,7 +76,7 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
             // Cahaya abstrak biru dan cyan.
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0x332684FF), Color(0x1122D3EE), Color.Transparent),
+                    listOf(Color(0x662684FF), Color(0x3322D3EE), Color.Transparent),
                     center = Offset(w * 0.82f, h * 0.24f),
                     radius = w * 0.72f
                 ),
@@ -85,7 +85,7 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0x2222D3EE), Color.Transparent),
+                    listOf(Color(0x4422D3EE), Color.Transparent),
                     center = Offset(w * 0.12f, h * 0.72f),
                     radius = w * 0.58f
                 ),
@@ -160,10 +160,67 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
                 )
             }
         } else {
-            Card(
+
+            // PROPERTA_PREMIUM_HEADER_V2
+            Column(
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(top = 24.dp, start = 28.dp, end = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(94.dp)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    Color(0x5535BFFF),
+                                    Color(0x222684FF),
+                                    Color.Transparent
+                                )
+                            ),
+                            RoundedCornerShape(50)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PropertaLogo(Modifier.size(86.dp))
+                }
+
+                Text(
+                    text = "PROPERTA",
+                    color = Color.White,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 4.sp
+                )
+
+                Text(
+                    text = if (isEnglish)
+                        "Manage Properties, Achieve More."
+                    else
+                        "Kelola Properti, Raih Lebih Banyak.",
+                    color = Color(0xFF75DFFF),
+                    fontSize = 12.sp,
+                    letterSpacing = 0.5.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                PropertaLoginBuildings(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(132.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 18.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -173,6 +230,7 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+
                     Text(
                         if (isSetup) if (isEnglish) "Create administrator account" else "Buat akun administrator"
                         else if (isEnglish) "Welcome back" else "Selamat datang kembali",
@@ -328,5 +386,132 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+
+/*
+ * Ilustrasi arsitektur PROPERTA.
+ * Seluruh bentuk digambar dengan Compose, bukan gambar screenshot.
+ */
+@Composable
+private fun PropertaLoginBuildings(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val base = h * 0.91f
+
+        // Cahaya lembut di belakang skyline.
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0x5533BFFF),
+                    Color(0x222684FF),
+                    Color.Transparent
+                ),
+                center = Offset(w * 0.50f, h * 0.48f),
+                radius = w * 0.48f
+            ),
+            radius = w * 0.48f,
+            center = Offset(w * 0.50f, h * 0.48f)
+        )
+
+        val glow = Color(0xFF36BDF5)
+        val buildingDark = Color(0xFF102D50)
+        val buildingMid = Color(0xFF17436B)
+        val buildingLight = Color(0xFF205982)
+        val window = Color(0xFF7DDAFF)
+
+        // Gedung kiri.
+        drawRoundRect(
+            color = buildingDark,
+            topLeft = Offset(w * 0.08f, h * 0.40f),
+            size = Size(w * 0.22f, base - h * 0.40f),
+            cornerRadius = CornerRadius(5.dp.toPx())
+        )
+
+        // Gedung tengah sebagai bangunan utama.
+        drawRoundRect(
+            color = buildingMid,
+            topLeft = Offset(w * 0.34f, h * 0.13f),
+            size = Size(w * 0.31f, base - h * 0.13f),
+            cornerRadius = CornerRadius(6.dp.toPx())
+        )
+
+        // Atap gedung utama.
+        drawLine(
+            color = glow,
+            start = Offset(w * 0.495f, h * 0.04f),
+            end = Offset(w * 0.495f, h * 0.13f),
+            strokeWidth = 2.dp.toPx()
+        )
+
+        // Gedung kanan.
+        drawRoundRect(
+            color = buildingLight,
+            topLeft = Offset(w * 0.70f, h * 0.31f),
+            size = Size(w * 0.22f, base - h * 0.31f),
+            cornerRadius = CornerRadius(5.dp.toPx())
+        )
+
+        // Jendela gedung kiri.
+        for (row in 0..3) {
+            for (col in 0..2) {
+                drawRoundRect(
+                    color = window.copy(alpha = 0.72f),
+                    topLeft = Offset(
+                        w * (0.115f + col * 0.065f),
+                        h * (0.47f + row * 0.105f)
+                    ),
+                    size = Size(w * 0.025f, h * 0.045f),
+                    cornerRadius = CornerRadius(1.dp.toPx())
+                )
+            }
+        }
+
+        // Jendela gedung tengah.
+        for (row in 0..5) {
+            for (col in 0..3) {
+                drawRoundRect(
+                    color = window.copy(alpha = if (row % 2 == 0) 0.9f else 0.55f),
+                    topLeft = Offset(
+                        w * (0.375f + col * 0.065f),
+                        h * (0.22f + row * 0.105f)
+                    ),
+                    size = Size(w * 0.027f, h * 0.052f),
+                    cornerRadius = CornerRadius(1.dp.toPx())
+                )
+            }
+        }
+
+        // Jendela gedung kanan.
+        for (row in 0..4) {
+            for (col in 0..2) {
+                drawRoundRect(
+                    color = window.copy(alpha = 0.72f),
+                    topLeft = Offset(
+                        w * (0.735f + col * 0.060f),
+                        h * (0.39f + row * 0.105f)
+                    ),
+                    size = Size(w * 0.024f, h * 0.047f),
+                    cornerRadius = CornerRadius(1.dp.toPx())
+                )
+            }
+        }
+
+        // Garis dasar kota dan aksen neon.
+        drawLine(
+            color = glow.copy(alpha = 0.85f),
+            start = Offset(w * 0.035f, base),
+            end = Offset(w * 0.965f, base),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        drawLine(
+            color = glow.copy(alpha = 0.35f),
+            start = Offset(w * 0.18f, base + 4.dp.toPx()),
+            end = Offset(w * 0.82f, base + 4.dp.toPx()),
+            strokeWidth = 1.dp.toPx()
+        )
     }
 }
