@@ -1,0 +1,414 @@
+package id.properta.app.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.room.withTransaction
+import id.properta.app.data.local.*
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
+
+private fun financeDate(value: String): Long =
+    LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault())
+        .toInstant().toEpochMilli()
+
+private fun rupiah(value: Long): String =
+    "Rp " + "%,d".format(value).replace(',', '.')
+
+@Composable
+fun FinanceScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val database = remember { PropertaDatabase.getInstance(context) }
+    val dao = remember { database.financeDao() }
+    val tenants by database.tenantDao().observeAll()
+        .collectAsState(initial = emptyList())
+    val units by database.rentalUnitDao().observeAll()
+        .collectAsState(initial = emptyList())
+    val properties by database.propertyDao().observeAll()
+        .collectAsState(initial = emptyList())
+    val contracts by dao.observeContracts().collectAsState(initial = emptyList())
+    val invoices by dao.observeInvoices().collectAsState(initial = emptyList())
+    val payments by dao.observePayments().collectAsState(initial = emptyList())
+    val expenses by dao.observeExpenses().collectAsState(initial = emptyList())
+    val deposits by dao.observeDeposits().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+
+    val tabs = listOf("Kontrak", "Tagihan", "Bayar", "Biaya", "Deposit")
+    var selected by remember { mutableIntStateOf(0) }
+    var dialog by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    Column(modifier.fillMaxSize().padding(16.dp)) {
+        Text("Keuangan PROPERTA", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(10.dp))
+        ScrollableTabRow(selectedTabIndex = selected) {
+            tabs.forEachIndexed { index, title ->
+                Tab(selected == index, { selected = index }, text = { Text(title) })
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Button(onClick = { dialog = true }) { Text("Tambah ${tabs[selected]}") }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (selected) {
+                0 -> items(contracts, key = { it.id }) { c ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(c.tenantName, style = MaterialTheme.typography.titleMedium)
+                            Text("Unit: ${c.unitName} • Kontrak #${c.id}")
+                            Text("Sewa: ${rupiah(c.monthlyRent)} / bulan")
+                            Text("Deposit: ${rupiah(c.depositAmount)}")
+                            Text("Status: ${c.status}")
+                        }
+                    }
+                }
+                1 -> items(invoices, key = { it.invoice.id }) { row ->
+                    val i = row.invoice
+                    val remaining = (i.amount - row.paidTotal).coerceAtLeast(0)
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(i.description, style = MaterialTheme.typography.titleMedium)
+                            Text("Periode: ${i.period} • Tagihan #${i.id}")
+                            Text("Tagihan: ${rupiah(i.amount)}")
+                            Text("Dibayar: ${rupiah(row.paidTotal)}")
+                            Text(
+                                if (remaining == 0L) "LUNAS"
+                                else "Sisa: ${rupiah(remaining)}",
+                                color = if (remaining == 0L)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+                2 -> items(payments, key = { it.id }) { p ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text("Pembayaran #${p.id}", style = MaterialTheme.typography.titleMedium)
+                            Text("Tagihan #${p.invoiceId} • Kontrak #${p.contractId}")
+                            Text(rupiah(p.amount) + " • ${p.method}")
+                            if (p.note.isNotBlank()) Text(p.note)
+                        }
+                    }
+                }
+                3 -> items(expenses, key = { it.id }) { e ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(e.category, style = MaterialTheme.typography.titleMedium)
+                            Text(e.description)
+                            Text(rupiah(e.amount))
+                        }
+                    }
+                }
+                4 -> items(deposits, key = { it.id }) { d ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text("Deposit ${d.type}", style = MaterialTheme.typography.titleMedium)
+                            Text("Kontrak #${d.contractId}")
+                            Text(rupiah(d.amount))
+                            if (d.note.isNotBlank()) Text(d.note)
+                        }
+                    }
+                }
+            }
+            if (when (selected) {
+                    0 -> contracts.isEmpty()
+                    1 -> invoices.isEmpty()
+                    2 -> payments.isEmpty()
+                    3 -> expenses.isEmpty()
+                    else -> deposits.isEmpty()
+                }) {
+                item {
+                    Text("Belum ada data ${tabs[selected].lowercase()}.")
+                }
+            }
+        }
+    }
+
+    if (dialog) {
+        val fields = when (selected) {
+            0 -> listOf("tenantId", "unitId", "startDate (YYYY-MM-DD)",
+                "endDate (YYYY-MM-DD)", "monthlyRent", "depositAmount")
+            1 -> listOf("contractId", "period (contoh 2026-11)",
+                "description", "amount", "dueDate (YYYY-MM-DD)")
+            2 -> listOf("invoiceId", "amount", "method", "note")
+            3 -> listOf("propertyId (kosong jika umum)", "category",
+                "description", "amount")
+            else -> listOf("contractId", "amount", "type (MASUK/KEMBALI)", "note")
+        }
+
+        val choices: Map<String, List<Pair<String, String>>> = when (selected) {
+            0 -> mapOf(
+                "tenantId" to tenants.map {
+                    "${it.fullName} • #${it.id}" to it.id.toString()
+                },
+                "unitId" to units.map { unit ->
+                    val propertyName = properties.firstOrNull {
+                        it.id == unit.propertyId
+                    }?.name ?: "Properti"
+                    "$propertyName / ${unit.name} • #${unit.id}" to unit.id.toString()
+                }
+            )
+            1 -> mapOf("contractId" to contracts.map {
+                "${it.tenantName} • ${it.unitName} • #${it.id}" to it.id.toString()
+            })
+            2 -> mapOf("invoiceId" to invoices
+                .filter { it.invoice.amount - it.paidTotal > 0 }
+                .map {
+                    val remaining = (it.invoice.amount - it.paidTotal).coerceAtLeast(0)
+                    "${it.invoice.description} • ${it.invoice.period} • sisa ${rupiah(remaining)} • #${it.invoice.id}" to
+                        it.invoice.id.toString()
+                })
+            3 -> mapOf("propertyId (kosong jika umum)" to
+                (listOf("Biaya umum" to "") + properties.map {
+                    "${it.name} • #${it.id}" to it.id.toString()
+                }))
+            else -> mapOf("contractId" to contracts.map {
+                "${it.tenantName} • ${it.unitName} • #${it.id}" to it.id.toString()
+            })
+        }
+        FinanceEntryDialog(
+            title = "Tambah ${tabs[selected]}",
+            fields = fields,
+            choices = choices,
+            onDismiss = { dialog = false },
+            onSave = { values ->
+                try {
+                    scope.launch {
+                        try {
+                            when (selected) {
+                                0 -> {
+                                    val tenantId = values["tenantId"]!!.toLong()
+                                    val unitId = values["unitId"]!!.toLong()
+                                    val tenant = tenants.firstOrNull { it.id == tenantId }
+                                        ?: error("ID penyewa tidak ditemukan.")
+                                    require(units.any { it.id == unitId }) {
+                                        "ID unit tidak ditemukan."
+                                    }
+                                    require(tenant.unitId == null || tenant.unitId == unitId) {
+                                        "Unit kontrak tidak sesuai dengan unit penyewa."
+                                    }
+                                    val rent = values["monthlyRent"]!!.toLong()
+                                    val deposit = values["depositAmount"]!!.toLong()
+                                    require(rent > 0) {
+                                        "Nilai sewa harus lebih dari nol."
+                                    }
+                                    require(deposit >= 0) {
+                                        "Deposit tidak boleh negatif."
+                                    }
+                                    val start = financeDate(values["startDate (YYYY-MM-DD)"]!!)
+                                    val end = financeDate(values["endDate (YYYY-MM-DD)"]!!)
+                                    require(end >= start) { "Tanggal kontrak tidak valid." }
+                                    dao.insertContract(RentalContractEntity(
+                                        tenantId = tenantId, unitId = unitId,
+                                        tenantName = tenant.fullName,
+                                        unitName = units.first { it.id == unitId }.name,
+                                        startDate = start, endDate = end,
+                                        monthlyRent = rent, depositAmount = deposit
+                                    ))
+                                }
+                                1 -> {
+                                    val amount = values["amount"]!!.toLong()
+                                    require(amount > 0) {
+                                        "Jumlah tagihan harus lebih dari nol."
+                                    }
+                                    val contractId = values["contractId"]!!.toLong()
+                                    require(contracts.any { it.id == contractId }) {
+                                        "Kontrak tidak ditemukan."
+                                    }
+                                    val period = values["period (contoh 2026-11)"]!!.trim()
+                                    require(Regex("^\\d{4}-(0[1-9]|1[0-2])$").matches(period)) {
+                                        "Periode harus berformat YYYY-MM."
+                                    }
+                                    val description = values["description"]!!.trim()
+                                    require(description.isNotBlank()) {
+                                        "Deskripsi tagihan wajib diisi."
+                                    }
+                                    dao.insertInvoice(RentalInvoiceEntity(
+                                        contractId = contractId,
+                                        period = period,
+                                        description = description,
+                                        amount = amount,
+                                        dueDate = financeDate(values["dueDate (YYYY-MM-DD)"]!!)
+                                    ))
+                                }
+                                2 -> {
+                                    val invoiceId = values["invoiceId"]!!.toLong()
+                                    val invoice = invoices.firstOrNull {
+                                        it.invoice.id == invoiceId
+                                    } ?: error("Tagihan tidak ditemukan.")
+                                    require(contracts.any {
+                                        it.id == invoice.invoice.contractId
+                                    }) {
+                                        "Kontrak untuk tagihan ini tidak ditemukan."
+                                    }
+                                    val amount = values["amount"]!!.toLong()
+                                    val remaining = (invoice.invoice.amount -
+                                        invoice.paidTotal).coerceAtLeast(0)
+                                    require(amount > 0 && remaining > 0 && amount <= remaining) {
+                                        "Pembayaran harus positif dan tidak boleh melebihi sisa tagihan."
+                                    }
+                                    dao.insertPayment(RentalPaymentEntity(
+                                        invoiceId = invoiceId,
+                                        contractId = invoice.invoice.contractId,
+                                        amount = amount,
+                                        method = values["method"]!!.ifBlank { "TUNAI" },
+                                        note = values["note"]!!
+                                    ))
+                                }
+                                3 -> {
+                                    val amount = values["amount"]!!.toLong()
+                                    require(amount > 0) {
+                                        "Biaya harus lebih dari nol."
+                                    }
+                                    val propertyText =
+                                        values["propertyId (kosong jika umum)"]!!.trim()
+                                    val propertyId = if (propertyText.isBlank()) {
+                                        null
+                                    } else {
+                                        propertyText.toLongOrNull()
+                                            ?: error("ID properti harus berupa angka.")
+                                    }
+                                    if (propertyId != null) {
+                                        require(properties.any { it.id == propertyId }) {
+                                            "ID properti tidak ditemukan."
+                                        }
+                                    }
+                                    val category = values["category"]!!.trim()
+                                    val description = values["description"]!!.trim()
+                                    require(category.isNotBlank()) {
+                                        "Kategori biaya wajib diisi."
+                                    }
+                                    require(description.isNotBlank()) {
+                                        "Deskripsi biaya wajib diisi."
+                                    }
+                                    dao.insertExpense(PropertyExpenseEntity(
+                                        propertyId = propertyId,
+                                        category = category,
+                                        description = description,
+                                        amount = amount
+                                    ))
+                                }
+                                4 -> {
+                                    val contractId = values["contractId"]!!.toLong()
+                                    require(contracts.any { it.id == contractId })
+                                    val amount = values["amount"]!!.toLong()
+                                    require(amount > 0)
+                                    val type = values["type (MASUK/KEMBALI)"]!!.uppercase()
+                                    require(type == "MASUK" || type == "KEMBALI")
+                                    dao.insertDeposit(DepositTransactionEntity(
+                                        contractId = contractId,
+                                        amount = amount, type = type,
+                                        note = values["note"]!!
+                                    ))
+                                }
+                            }
+                            dialog = false
+                            message = "Data berhasil disimpan."
+                        } catch (e: Exception) {
+                            message = e.message ?: "Gagal menyimpan data."
+                        }
+                    }
+                } catch (e: Exception) {
+                    message = e.message ?: "Data tidak valid."
+                }
+            }
+        )
+    }
+
+    message?.let {
+        AlertDialog(
+            onDismissRequest = { message = null },
+            confirmButton = {
+                TextButton(onClick = { message = null }) { Text("OK") }
+            },
+            text = { Text(it) }
+        )
+    }
+}
+
+@Composable
+private fun FinanceEntryDialog(
+    title: String,
+    fields: List<String>,
+    choices: Map<String, List<Pair<String, String>>>,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, String>) -> Unit
+) {
+    val values = remember(title) {
+        androidx.compose.runtime.mutableStateMapOf<String, String>().apply {
+            fields.forEach { put(it, "") }
+        }
+    }
+    var expandedField by remember(title) { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            )
+                fields.forEach { field ->
+                    val options = choices[field]
+                    if (options != null) {
+                        val selectedLabel = options.firstOrNull {
+                            it.second == (values[field] ?: "")
+                        }?.first ?: "Pilih $field"
+
+                        Box(Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { expandedField = field },
+                                enabled = options.isNotEmpty(),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(selectedLabel)
+                            }
+
+                            DropdownMenu(
+                                expanded = expandedField == field,
+                                onDismissRequest = { expandedField = null }
+                            ) {
+                                options.forEach { (label, value) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = {
+                                            values[field] = value
+                                            expandedField = null
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = values[field] ?: "",
+                            onValueChange = { values[field] = it },
+                            label = { Text(field) },
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSave(values.toMap()) }) { Text("Simpan") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal") }
+        }
+    )
+}
