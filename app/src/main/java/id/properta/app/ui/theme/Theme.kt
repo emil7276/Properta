@@ -1,9 +1,12 @@
 package id.properta.app.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 
 private val LightColors = lightColorScheme(
@@ -69,6 +72,16 @@ fun PropertaTheme(
     MaterialTheme(
         colorScheme = colors,
         typography = MaterialTheme.typography,
+        shapes = Shapes(
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(26.dp)
+        ),
+        shapes = Shapes(
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(26.dp)
+        ),
         content = content
     )
 }

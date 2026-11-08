@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apartment
@@ -144,37 +146,49 @@ private fun PropertaApp(
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF071B3A),
-                        Color(0xFF123F78),
-                        Color(0xFFEAF3FF),
-                        Color(0xFFF8FBFF)
+                        Color(0xFF030B1B),
+                        Color(0xFF071A38),
+                        Color(0xFF0A2852),
+                        Color(0xFF06152E)
                     )
                 )
             )
             .drawBehind {
+                // Soft abstract glow: electric blue upper-right, cyan lower-left.
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0x7726BFFF),
+                            Color(0x9926BFFF),
+                            Color(0x442B8CFF),
                             Color.Transparent
                         ),
-                        center = Offset(size.width * 0.92f, size.height * 0.08f),
-                        radius = size.width * 0.72f
+                        center = Offset(size.width * 0.94f, size.height * 0.10f),
+                        radius = size.width * 0.78f
                     ),
-                    radius = size.width * 0.72f,
-                    center = Offset(size.width * 0.92f, size.height * 0.08f)
+                    radius = size.width * 0.78f,
+                    center = Offset(size.width * 0.94f, size.height * 0.10f)
                 )
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0x442B8CFF),
+                            Color(0x6622D3EE),
+                            Color(0x332684FF),
                             Color.Transparent
                         ),
-                        center = Offset(size.width * 0.05f, size.height * 0.82f),
-                        radius = size.width * 0.65f
+                        center = Offset(size.width * 0.04f, size.height * 0.88f),
+                        radius = size.width * 0.72f
                     ),
-                    radius = size.width * 0.65f,
-                    center = Offset(size.width * 0.05f, size.height * 0.82f)
+                    radius = size.width * 0.72f,
+                    center = Offset(size.width * 0.04f, size.height * 0.88f)
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0x332B8CFF), Color.Transparent),
+                        center = Offset(size.width * 0.58f, size.height * 0.52f),
+                        radius = size.width * 0.58f
+                    ),
+                    radius = size.width * 0.58f,
+                    center = Offset(size.width * 0.58f, size.height * 0.52f)
                 )
             },
         containerColor = Color.Transparent,
@@ -227,6 +241,8 @@ private fun PropertaApp(
     }
 }
 
+
+
 @Composable
 private fun Dashboard(
     modifier: Modifier = Modifier,
@@ -236,189 +252,142 @@ private fun Dashboard(
     onSkinSelected: (AccentSkin) -> Unit,
     onLogout: () -> Unit = {}
 ) {
+    val english = selectedLanguage == "en"
     Column(
-        modifier.fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        modifier = modifier.fillMaxSize().background(LightBackground)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        TextButton(
-            onClick = onLogout,
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(if (selectedLanguage == "en") "Sign out" else "Keluar")
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    "PROPERTA",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 2.sp
-                )
-                Spacer(Modifier.height(5.dp))
-                Text(
-                    if (selectedLanguage == "en")
-                        "Manage properties more easily"
-                    else
-                        "Kelola properti dengan lebih mudah",
-                    color = MutedText,
-                    fontSize = 12.sp
-                )
+                Text("PROPERTA", color = DeepNavy, fontSize = 21.sp,
+                    fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp)
+                Text(if (english) "Manage Properties, Achieve More."
+                    else "Kelola Properti, Raih Lebih Banyak.",
+                    color = MutedText, fontSize = 11.sp)
             }
-
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFDCE5F2))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = { onLanguageSelected("id") },
-                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "ID",
-                            color = if (selectedLanguage == "id")
-                                selectedSkin.primary else MutedText,
-                            fontWeight = if (selectedLanguage == "id")
-                                FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 12.sp
-                        )
+            Surface(shape = CircleShape, color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFE2EAF5))) {
+                Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
+                    TextButton(onClick = { onLanguageSelected("id") },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+                        Text("ID", color = if (!english) RoyalBlue else MutedText,
+                            fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }
-
-                    Text("|", color = MutedText)
-
-                    TextButton(
-                        onClick = { onLanguageSelected("en") },
-                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "EN",
-                            color = if (selectedLanguage == "en")
-                                selectedSkin.primary else MutedText,
-                            fontWeight = if (selectedLanguage == "en")
-                                FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 12.sp
-                        )
+                    TextButton(onClick = { onLanguageSelected("en") },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+                        Text("EN", color = if (english) RoyalBlue else MutedText,
+                            fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }
                 }
             }
         }
 
-        // Pilihan skin satu baris yang dapat digeser horizontal
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(vertical = 3.dp)
-        ) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(PropertaAccentSkins.all, key = { it.id }) { skin ->
                 val active = skin.id == selectedSkin.id
-
-                Surface(
-                    onClick = { onSkinSelected(skin) },
+                Surface(onClick = { onSkinSelected(skin) },
                     shape = RoundedCornerShape(50),
-                    color = Color.White,
-                    border = BorderStroke(
-                        if (active) 2.dp else 1.dp,
-                        if (active) skin.primary else Color(0xFFDCE5F2)
-                    ),
-                    shadowElevation = if (active) 3.dp else 0.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(
-                            horizontal = 12.dp,
-                            vertical = 9.dp
-                        ),
+                    color = if (active) Color(0xFFE7F0FF) else Color.White,
+                    border = BorderStroke(1.dp,
+                        if (active) skin.primary else Color(0xFFE3EAF4))) {
+                    Row(Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(7.dp)
-                    ) {
-                        Box(
-                            Modifier
-                                .size(19.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(skin.primary, skin.glow)
-                                    )
-                                )
-                        )
-
-                        Text(
-                            skin.name,
-                            color = DeepNavy,
-                            fontSize = 11.sp,
-                            fontWeight = if (active) {
-                                FontWeight.Bold
-                            } else {
-                                FontWeight.Medium
-                            }
-                        )
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Box(Modifier.size(12.dp).clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(skin.primary, skin.glow))))
+                        Text(skin.name, color = DeepNavy, fontSize = 10.sp,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
                     }
                 }
             }
         }
 
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp))
-                .background(Brush.linearGradient(listOf(DeepNavy, selectedSkin.primary, selectedSkin.glow)))
-                .padding(22.dp)
-        ) {
-            Text(if (selectedLanguage == "en") "Manage Properties," else "Kelola Properti,", color = Color.White.copy(alpha = 0.8f))
-            Text(
-                if (selectedLanguage == "en") "Achieve More." else "Raih Lebih Banyak.",
-                color = Color.White,
-                fontSize = 25.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp))
+            .background(Brush.linearGradient(listOf(
+                Color(0xFF061A3A), Color(0xFF0755B8), Color(0xFF12A8E8)
+            ))).padding(20.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(if (english) "PROPERTY OVERVIEW" else "RINGKASAN PROPERTI",
+                        color = Color.White.copy(alpha = .72f), fontSize = 10.sp,
+                        letterSpacing = 1.2.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(7.dp))
+                    Text(if (english) "Manage smarter." else "Kelola lebih mudah.",
+                        color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                    Text(if (english) "Your property business at a glance"
+                        else "Semua aktivitas properti dalam satu tempat",
+                        color = Color.White.copy(alpha = .78f), fontSize = 11.sp)
+                }
+                Surface(shape = RoundedCornerShape(17.dp),
+                    color = Color.White.copy(alpha = .14f)) {
+                    Icon(Icons.Default.Apartment, contentDescription = null,
+                        tint = Color.White, modifier = Modifier.padding(13.dp).size(28.dp))
+                }
+            }
             Spacer(Modifier.height(22.dp))
-            Text(
-                if (selectedLanguage == "en") "TOTAL INCOME THIS MONTH" else "TOTAL PEMASUKAN BULAN INI",
-                color = Color.White.copy(alpha = 0.75f),
-                fontSize = 10.sp,
-                letterSpacing = 1.sp
-            )
-            Spacer(Modifier.height(6.dp))
-            Text("Rp 0", color = Color.White, fontSize = 32.sp,
-                fontWeight = FontWeight.Bold)
-            Text(
-                if (selectedLanguage == "en") "Recorded income will appear here" else "Pemasukan tercatat akan muncul di sini",
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 11.sp
-            )
+            Text(if (english) "MONTHLY INCOME" else "PENDAPATAN BULAN INI",
+                color = Color.White.copy(alpha = .72f), fontSize = 10.sp,
+                letterSpacing = 1.sp)
+            Spacer(Modifier.height(5.dp))
+            Text("—", color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.ExtraBold)
+            Text(if (english) "Finance data appears when transactions are recorded"
+                else "Data pendapatan tampil setelah transaksi dicatat",
+                color = Color.White.copy(alpha = .78f), fontSize = 10.sp)
         }
 
-        Text(
-            if (selectedLanguage == "en") "Property summary" else "Ringkasan properti",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard(if (selectedLanguage == "en") "Properties" else "Properti", "0", if (selectedLanguage == "en") "Registered" else "Terdaftar", RoyalBlue, Modifier.weight(1f))
-            SummaryCard(if (selectedLanguage == "en") "Units" else "Unit", "0", if (selectedLanguage == "en") "Total rooms" else "Total kamar", CyanGlow, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard(if (selectedLanguage == "en") "Active tenants" else "Penyewa aktif", "0", if (selectedLanguage == "en") "Currently renting" else "Sedang menyewa",
-                SuccessGreen, Modifier.weight(1f))
-            SummaryCard(if (selectedLanguage == "en") "Outstanding" else "Tunggakan", "Rp 0", if (selectedLanguage == "en") "Unpaid" else "Belum dibayar",
-                WarningAmber, Modifier.weight(1f))
-        }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-                Text(if (selectedLanguage == "en") "Next payment" else "Pembayaran berikutnya", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text(if (selectedLanguage == "en") "No payment schedule yet" else "Belum ada jadwal pembayaran", color = MutedText,
-                    fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(if (english) "Your portfolio" else "Portofolio Anda",
+                    color = DeepNavy, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(if (english) "A clear view of your property data"
+                    else "Pantau data properti dengan lebih rapi",
+                    color = MutedText, fontSize = 11.sp)
+            }
+            TextButton(onClick = onLogout) {
+                Text(if (english) "Sign out" else "Keluar", color = MutedText, fontSize = 11.sp)
             }
         }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            SummaryCard(if (english) "Properties" else "Properti", "—",
+                if (english) "Registered" else "Terdaftar", RoyalBlue, Modifier.weight(1f))
+            SummaryCard(if (english) "Rental units" else "Unit sewa", "—",
+                if (english) "Total units" else "Total unit", CyanGlow, Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            SummaryCard(if (english) "Tenants" else "Penyewa", "—",
+                if (english) "Active tenants" else "Penyewa aktif",
+                SuccessGreen, Modifier.weight(1f))
+            SummaryCard(if (english) "Outstanding" else "Tunggakan", "—",
+                if (english) "Unpaid bills" else "Tagihan belum lunas",
+                WarningAmber, Modifier.weight(1f))
+        }
+
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+            Row(Modifier.fillMaxWidth().padding(17.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFEAF2FF)) {
+                    Icon(Icons.Default.Payments, contentDescription = null, tint = RoyalBlue,
+                        modifier = Modifier.padding(12.dp).size(23.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(if (english) "Payment schedule" else "Jadwal pembayaran",
+                        color = DeepNavy, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(if (english) "Upcoming bills and payment status"
+                        else "Pantau jatuh tempo dan status pembayaran",
+                        color = MutedText, fontSize = 10.sp)
+                }
+            }
+        }
+        Text(if (english) "Choose a menu below to manage your properties."
+            else "Pilih menu di bawah untuk mulai mengelola properti Anda.",
+            color = MutedText, fontSize = 10.sp,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
     }
 }
 
@@ -557,6 +526,8 @@ private fun PlaceholderScreen(title: String, modifier: Modifier = Modifier) {
     }
 }
 
+
+
 @Composable
 private fun SummaryCard(
     title: String,
@@ -565,17 +536,19 @@ private fun SummaryCard(
     accent: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier, shape = RoundedCornerShape(20.dp)) {
-        Column(
-            Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(
-                Modifier.size(9.dp).clip(RoundedCornerShape(50)).background(accent)
-            )
-            Text(title, color = MutedText, fontSize = 11.sp)
-            Text(value, fontSize = 21.sp, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = MutedText, fontSize = 10.sp)
+    Card(modifier = modifier, shape = RoundedCornerShape(21.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Box(Modifier.size(34.dp).clip(RoundedCornerShape(12.dp))
+                .background(accent.copy(alpha = .12f)),
+                contentAlignment = Alignment.Center) {
+                Box(Modifier.size(10.dp).clip(CircleShape).background(accent))
+            }
+            Text(title, color = MutedText, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            Text(value, color = DeepNavy, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = MutedText, fontSize = 9.sp)
         }
     }
 }
