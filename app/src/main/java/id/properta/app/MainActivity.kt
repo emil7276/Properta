@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.properta.app.auth.AuthScreen
+import id.properta.app.auth.LocalAuth
 import id.properta.app.ui.TenantScreen
+import id.properta.app.ui.FinanceScreen
 import id.properta.app.data.PropertaRepository
 import id.properta.app.data.local.PropertaDatabase
 import id.properta.app.ui.PropertyViewModel
@@ -44,6 +46,8 @@ class MainActivity : ComponentActivity() {
             database.tenantDao()
         )
 
+        val auth = LocalAuth(applicationContext)
+
         setContent {
             PropertaTheme {
                 val propertyViewModel: PropertyViewModel = viewModel(
@@ -52,9 +56,16 @@ class MainActivity : ComponentActivity() {
                 val tenantViewModel: TenantViewModel = viewModel(
                     factory = TenantViewModel.Factory(repository)
                 )
-                var authenticated by remember { mutableStateOf(false) }
+                var authenticated by remember { mutableStateOf(auth.hasRememberedSession()) }
                 if (authenticated) {
-                    PropertaApp(propertyViewModel, tenantViewModel)
+                    PropertaApp(
+                        propertyViewModel,
+                        tenantViewModel,
+                        onLogout = {
+                            auth.clearSession()
+                            authenticated = false
+                        }
+                    )
                 } else {
                     AuthScreen(onAuthenticated = { authenticated = true })
                 }
@@ -66,7 +77,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun PropertaApp(
     viewModel: PropertyViewModel,
-    tenantViewModel: TenantViewModel
+    tenantViewModel: TenantViewModel,
+    onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Beranda", "Properti", "Penyewa", "Keuangan")
@@ -93,21 +105,28 @@ private fun PropertaApp(
         }
     ) { padding ->
         when (selectedTab) {
-            0 -> Dashboard(Modifier.padding(padding))
+            0 -> Dashboard(Modifier.padding(padding), onLogout)
             1 -> PropertyScreen(viewModel, Modifier.padding(padding))
             2 -> TenantScreen(tenantViewModel, Modifier.padding(padding))
-            else -> PlaceholderScreen(tabs[selectedTab], Modifier.padding(padding))
+            else -> FinanceScreen(Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun Dashboard(modifier: Modifier = Modifier) {
+private fun Dashboard(modifier: Modifier = Modifier, onLogout: () -> Unit = {}) {
     Column(
         modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        TextButton(
+            onClick = onLogout,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Keluar")
+        }
+
         Column(Modifier.padding(top = 24.dp)) {
             Text(
                 "PROPERTA",

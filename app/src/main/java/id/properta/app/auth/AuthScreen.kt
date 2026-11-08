@@ -40,7 +40,8 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
 
     var introFinished by remember { mutableStateOf(false) }
     var isSetup by remember { mutableStateOf(!auth.isSetup()) }
-    var username by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf(auth.getRememberedUsername()) }
+    var rememberMe by remember { mutableStateOf(auth.getRememberedUsername().isNotBlank()) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -210,6 +211,19 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    if (!isSetup) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it }
+                            )
+                            Text(
+                                "Ingat saya",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
                     if (isSetup) {
                         OutlinedTextField(
                             value = confirmPassword,
@@ -272,6 +286,8 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                                 busy = false
 
                                 if (valid) {
+                                    auth.setRememberMe(username.trim(), rememberMe)
+                                    password = ""
                                     onAuthenticated()
                                 } else {
                                     message = "Username atau kata sandi salah."
