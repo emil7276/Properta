@@ -190,6 +190,64 @@ private fun PropertaApp(
                     radius = size.width * 0.58f,
                     center = Offset(size.width * 0.58f, size.height * 0.52f)
                 )
+
+                // Premium lens bloom: a controlled cyan-white flare with soft halo.
+                val flareCenter = Offset(size.width * 0.79f, size.height * 0.24f)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x55E8FCFF),
+                            Color(0x3322D3EE),
+                            Color(0x182684FF),
+                            Color.Transparent
+                        ),
+                        center = flareCenter,
+                        radius = size.width * 0.23f
+                    ),
+                    radius = size.width * 0.23f,
+                    center = flareCenter
+                )
+                drawCircle(
+                    color = Color(0x99DDFBFF),
+                    radius = 2.1.dp.toPx(),
+                    center = flareCenter
+                )
+                drawCircle(
+                    color = Color(0x3322D3EE),
+                    radius = 7.dp.toPx(),
+                    center = flareCenter
+                )
+
+                // Delicate anamorphic streak, deliberately low contrast.
+                drawLine(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0x1822D3EE),
+                            Color(0x44DDFBFF),
+                            Color(0x182684FF),
+                            Color.Transparent
+                        ),
+                        startX = size.width * 0.48f,
+                        endX = size.width * 0.98f
+                    ),
+                    start = Offset(size.width * 0.48f, size.height * 0.24f),
+                    end = Offset(size.width * 0.98f, size.height * 0.24f),
+                    strokeWidth = 1.1.dp.toPx()
+                )
+
+                // Small defocused bokeh accents add depth without competing with content.
+                listOf(
+                    Triple(Offset(size.width * 0.16f, size.height * 0.28f), 3.2f, 0x3322D3EE),
+                    Triple(Offset(size.width * 0.88f, size.height * 0.62f), 2.4f, 0x222684FF),
+                    Triple(Offset(size.width * 0.31f, size.height * 0.78f), 2.0f, 0x2222D3EE)
+                ).forEach { (point, radius, tint) ->
+                    drawCircle(
+                        color = Color(tint),
+                        radius = radius.dp.toPx(),
+                        center = point
+                    )
+                }
             },
         containerColor = Color.Transparent,
         bottomBar = {

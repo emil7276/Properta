@@ -118,18 +118,50 @@ fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
                 )
             }
 
-            // Titik cahaya kecil sebagai detail futuristik.
+            // Premium lens bloom: bright core, wide soft halo and restrained anamorphic streak.
+            val flare = Offset(w * 0.82f, h * 0.22f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(
+                        Color(0x66E8FCFF),
+                        Color(0x4422D3EE),
+                        Color(0x1C2684FF),
+                        Color.Transparent
+                    ),
+                    center = flare,
+                    radius = w * 0.24f
+                ),
+                radius = w * 0.24f,
+                center = flare
+            )
+            drawCircle(Color(0xBBDDFBFF), 2.5.dp.toPx(), flare)
+            drawCircle(Color(0x3322D3EE), 9.dp.toPx(), flare)
+
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        Color(0x1822D3EE),
+                        Color(0x55E8FCFF),
+                        Color(0x222684FF),
+                        Color.Transparent
+                    ),
+                    startX = w * 0.42f,
+                    endX = w * 1.04f
+                ),
+                start = Offset(w * 0.42f, h * 0.22f),
+                end = Offset(w * 1.04f, h * 0.22f),
+                strokeWidth = 1.2.dp.toPx()
+            )
+
+            // Defocused bokeh points and tiny light cores.
             listOf(
-                Offset(w * 0.16f, h * 0.25f),
-                Offset(w * 0.84f, h * 0.37f),
-                Offset(w * 0.72f, h * 0.79f),
-                Offset(w * 0.24f, h * 0.84f)
-            ).forEach { point ->
-                drawCircle(
-                    color = Color(0x5522D3EE),
-                    radius = 2.2.dp.toPx(),
-                    center = point
-                )
+                Triple(Offset(w * 0.16f, h * 0.25f), 3.0f, 0x4422D3EE),
+                Triple(Offset(w * 0.84f, h * 0.37f), 2.2f, 0x5522D3EE),
+                Triple(Offset(w * 0.72f, h * 0.79f), 2.6f, 0x332684FF),
+                Triple(Offset(w * 0.24f, h * 0.84f), 1.8f, 0x3322D3EE)
+            ).forEach { (point, radius, tint) ->
+                drawCircle(Color(tint), radius.dp.toPx(), point)
             }
         }
 

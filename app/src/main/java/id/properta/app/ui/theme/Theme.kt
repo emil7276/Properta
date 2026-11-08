@@ -77,11 +77,6 @@ fun PropertaTheme(
             medium = RoundedCornerShape(20.dp),
             large = RoundedCornerShape(26.dp)
         ),
-        shapes = Shapes(
-            small = RoundedCornerShape(12.dp),
-            medium = RoundedCornerShape(20.dp),
-            large = RoundedCornerShape(26.dp)
-        ),
         content = content
     )
 }

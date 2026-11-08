@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -61,15 +63,35 @@ fun PropertaAnimatedIntro(
         modifier = modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                Brush.linearGradient(
                     listOf(
-                        Color(0xFF041126),
-                        Color(0xFF082A58),
-                        Color(0xFF123F78),
-                        Color(0xFF061630)
+                        Color(0xFF030B1B),
+                        Color(0xFF071A38),
+                        Color(0xFF0A2852),
+                        Color(0xFF06152E)
                     )
                 )
-            ),
+            )
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color(0x8826BFFF), Color(0x332B8CFF), Color.Transparent),
+                        center = Offset(size.width * 0.88f, size.height * 0.16f),
+                        radius = size.width * 0.78f
+                    ),
+                    radius = size.width * 0.78f,
+                    center = Offset(size.width * 0.88f, size.height * 0.16f)
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color(0x6622D3EE), Color.Transparent),
+                        center = Offset(size.width * 0.08f, size.height * 0.84f),
+                        radius = size.width * 0.68f
+                    ),
+                    radius = size.width * 0.68f,
+                    center = Offset(size.width * 0.08f, size.height * 0.84f)
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(
