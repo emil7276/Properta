@@ -1,11 +1,21 @@
 package id.properta.app
 
 import android.os.Bundle
+import id.properta.app.data.backup.PropertaBackup
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,13 +23,16 @@ import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,9 +60,23 @@ class MainActivity : ComponentActivity() {
         )
 
         val auth = LocalAuth(applicationContext)
+        val settings = getSharedPreferences("properta_settings", MODE_PRIVATE)
 
         setContent {
-            PropertaTheme {
+            var selectedSkinId by remember {
+                mutableStateOf(settings.getString("accent_skin", "ocean") ?: "ocean")
+            }
+            val selectedSkin = PropertaAccentSkins.all.firstOrNull {
+                it.id == selectedSkinId
+            } ?: PropertaAccentSkins.default
+
+            var selectedLanguage by remember {
+                mutableStateOf(
+                    settings.getString("app_language", "id") ?: "id"
+                )
+            }
+
+            PropertaTheme(accentSkin = selectedSkin) {
                 val propertyViewModel: PropertyViewModel = viewModel(
                     factory = PropertyViewModel.Factory(repository)
                 )
@@ -61,13 +88,30 @@ class MainActivity : ComponentActivity() {
                     PropertaApp(
                         propertyViewModel,
                         tenantViewModel,
+                        selectedSkin = selectedSkin,
+                        selectedLanguage = selectedLanguage,
+                        onLanguageSelected = { language ->
+                            selectedLanguage = language
+                            settings.edit()
+                                .putString("app_language", language)
+                                .apply()
+                        },
+                        onSkinSelected = { skin ->
+                            settings.edit()
+                                .putString("accent_skin", skin.id)
+                                .apply()
+                            selectedSkinId = skin.id
+                        },
                         onLogout = {
                             auth.clearSession()
                             authenticated = false
                         }
                     )
                 } else {
-                    AuthScreen(onAuthenticated = { authenticated = true })
+                    AuthScreen(
+                        language = selectedLanguage,
+                        onAuthenticated = { authenticated = true }
+                    )
                 }
             }
         }
@@ -78,45 +122,122 @@ class MainActivity : ComponentActivity() {
 private fun PropertaApp(
     viewModel: PropertyViewModel,
     tenantViewModel: TenantViewModel,
+    selectedSkin: AccentSkin,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    onSkinSelected: (AccentSkin) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Beranda", "Properti", "Penyewa", "Keuangan")
+    val tabs = listOf("Beranda", "Unit", "Penyewa", "Transaksi", "Lainnya")
     val icons = listOf(
         Icons.Default.Home,
         Icons.Default.Apartment,
         Icons.Default.People,
-        Icons.Default.Payments
+        Icons.Default.Payments,
+        Icons.Default.MoreHoriz
     )
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF071B3A),
+                        Color(0xFF123F78),
+                        Color(0xFFEAF3FF),
+                        Color(0xFFF8FBFF)
+                    )
+                )
+            )
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x7726BFFF),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.92f, size.height * 0.08f),
+                        radius = size.width * 0.72f
+                    ),
+                    radius = size.width * 0.72f,
+                    center = Offset(size.width * 0.92f, size.height * 0.08f)
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x442B8CFF),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.05f, size.height * 0.82f),
+                        radius = size.width * 0.65f
+                    ),
+                    radius = size.width * 0.65f,
+                    center = Offset(size.width * 0.05f, size.height * 0.82f)
+                )
+            },
+        containerColor = Color.Transparent,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color(0xF5FFFFFF),
+                tonalElevation = 8.dp
+            ) {
                 tabs.forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
-                        icon = { Icon(icons[index], contentDescription = title) },
-                        label = { Text(title, fontSize = 10.sp) }
+                        icon = {
+                            Icon(
+                                icons[index],
+                                contentDescription = title
+                            )
+                        },
+                        label = { Text(title, fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = RoyalBlue,
+                            selectedTextColor = RoyalBlue,
+                            unselectedIconColor = MutedText,
+                            unselectedTextColor = MutedText,
+                            indicatorColor = Color(0xFFDCEBFF)
+                        )
                     )
                 }
             }
         }
     ) { padding ->
         when (selectedTab) {
-            0 -> Dashboard(Modifier.padding(padding), onLogout)
+            0 -> Dashboard(
+                modifier = Modifier.padding(padding),
+                selectedSkin = selectedSkin,
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = onLanguageSelected,
+                onSkinSelected = onSkinSelected,
+                onLogout = onLogout
+            )
             1 -> PropertyScreen(viewModel, Modifier.padding(padding))
             2 -> TenantScreen(tenantViewModel, Modifier.padding(padding))
-            else -> FinanceScreen(Modifier.padding(padding))
+            3 -> FinanceScreen(Modifier.padding(padding))
+            4 -> OtherScreen(
+                Modifier.padding(padding),
+                selectedLanguage,
+                onLanguageSelected
+            )
         }
     }
 }
 
 @Composable
-private fun Dashboard(modifier: Modifier = Modifier, onLogout: () -> Unit = {}) {
+private fun Dashboard(
+    modifier: Modifier = Modifier,
+    selectedSkin: AccentSkin,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    onSkinSelected: (AccentSkin) -> Unit,
+    onLogout: () -> Unit = {}
+) {
     Column(
-        modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        modifier.fillMaxSize()
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
@@ -124,40 +245,141 @@ private fun Dashboard(modifier: Modifier = Modifier, onLogout: () -> Unit = {}) 
             onClick = onLogout,
             modifier = Modifier.align(Alignment.End)
         ) {
-            Text("Keluar")
+            Text(if (selectedLanguage == "en") "Sign out" else "Keluar")
         }
 
-        Column(Modifier.padding(top = 24.dp)) {
-            Text(
-                "PROPERTA",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 2.sp
-            )
-            Spacer(Modifier.height(5.dp))
-            Text(
-                "Kelola properti dengan lebih mudah",
-                color = MutedText,
-                fontSize = 12.sp
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "PROPERTA",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 2.sp
+                )
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    if (selectedLanguage == "en")
+                        "Manage properties more easily"
+                    else
+                        "Kelola properti dengan lebih mudah",
+                    color = MutedText,
+                    fontSize = 12.sp
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFDCE5F2))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = { onLanguageSelected("id") },
+                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "ID",
+                            color = if (selectedLanguage == "id")
+                                selectedSkin.primary else MutedText,
+                            fontWeight = if (selectedLanguage == "id")
+                                FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Text("|", color = MutedText)
+
+                    TextButton(
+                        onClick = { onLanguageSelected("en") },
+                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "EN",
+                            color = if (selectedLanguage == "en")
+                                selectedSkin.primary else MutedText,
+                            fontWeight = if (selectedLanguage == "en")
+                                FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // Pilihan skin satu baris yang dapat digeser horizontal
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(vertical = 3.dp)
+        ) {
+            items(PropertaAccentSkins.all, key = { it.id }) { skin ->
+                val active = skin.id == selectedSkin.id
+
+                Surface(
+                    onClick = { onSkinSelected(skin) },
+                    shape = RoundedCornerShape(50),
+                    color = Color.White,
+                    border = BorderStroke(
+                        if (active) 2.dp else 1.dp,
+                        if (active) skin.primary else Color(0xFFDCE5F2)
+                    ),
+                    shadowElevation = if (active) 3.dp else 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 9.dp
+                        ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        Box(
+                            Modifier
+                                .size(19.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(skin.primary, skin.glow)
+                                    )
+                                )
+                        )
+
+                        Text(
+                            skin.name,
+                            color = DeepNavy,
+                            fontSize = 11.sp,
+                            fontWeight = if (active) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Medium
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp))
-                .background(Brush.linearGradient(listOf(DeepNavy, Navy, RoyalBlue)))
+                .background(Brush.linearGradient(listOf(DeepNavy, selectedSkin.primary, selectedSkin.glow)))
                 .padding(22.dp)
         ) {
-            Text("Kelola Properti,", color = Color.White.copy(alpha = 0.8f))
+            Text(if (selectedLanguage == "en") "Manage Properties," else "Kelola Properti,", color = Color.White.copy(alpha = 0.8f))
             Text(
-                "Raih Lebih Banyak.",
+                if (selectedLanguage == "en") "Achieve More." else "Raih Lebih Banyak.",
                 color = Color.White,
                 fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(22.dp))
             Text(
-                "TOTAL PEMASUKAN BULAN INI",
+                if (selectedLanguage == "en") "TOTAL INCOME THIS MONTH" else "TOTAL PEMASUKAN BULAN INI",
                 color = Color.White.copy(alpha = 0.75f),
                 fontSize = 10.sp,
                 letterSpacing = 1.sp
@@ -166,34 +388,34 @@ private fun Dashboard(modifier: Modifier = Modifier, onLogout: () -> Unit = {}) 
             Text("Rp 0", color = Color.White, fontSize = 32.sp,
                 fontWeight = FontWeight.Bold)
             Text(
-                "Pemasukan tercatat akan muncul di sini",
+                if (selectedLanguage == "en") "Recorded income will appear here" else "Pemasukan tercatat akan muncul di sini",
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 11.sp
             )
         }
 
         Text(
-            "Ringkasan properti",
+            if (selectedLanguage == "en") "Property summary" else "Ringkasan properti",
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard("Properti", "0", "Terdaftar", RoyalBlue, Modifier.weight(1f))
-            SummaryCard("Unit", "0", "Total kamar", CyanGlow, Modifier.weight(1f))
+            SummaryCard(if (selectedLanguage == "en") "Properties" else "Properti", "0", if (selectedLanguage == "en") "Registered" else "Terdaftar", RoyalBlue, Modifier.weight(1f))
+            SummaryCard(if (selectedLanguage == "en") "Units" else "Unit", "0", if (selectedLanguage == "en") "Total rooms" else "Total kamar", CyanGlow, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard("Penyewa aktif", "0", "Sedang menyewa",
+            SummaryCard(if (selectedLanguage == "en") "Active tenants" else "Penyewa aktif", "0", if (selectedLanguage == "en") "Currently renting" else "Sedang menyewa",
                 SuccessGreen, Modifier.weight(1f))
-            SummaryCard("Tunggakan", "Rp 0", "Belum dibayar",
+            SummaryCard(if (selectedLanguage == "en") "Outstanding" else "Tunggakan", "Rp 0", if (selectedLanguage == "en") "Unpaid" else "Belum dibayar",
                 WarningAmber, Modifier.weight(1f))
         }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("Pembayaran berikutnya", fontWeight = FontWeight.Bold)
+                Text(if (selectedLanguage == "en") "Next payment" else "Pembayaran berikutnya", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
-                Text("Belum ada jadwal pembayaran", color = MutedText,
+                Text(if (selectedLanguage == "en") "No payment schedule yet" else "Belum ada jadwal pembayaran", color = MutedText,
                     fontSize = 12.sp)
             }
         }
@@ -354,6 +576,282 @@ private fun SummaryCard(
             Text(title, color = MutedText, fontSize = 11.sp)
             Text(value, fontSize = 21.sp, fontWeight = FontWeight.Bold)
             Text(subtitle, color = MutedText, fontSize = 10.sp)
+        }
+    }
+}
+
+
+@Composable
+private fun OtherScreen(
+    modifier: Modifier = Modifier,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val database = remember(context) {
+        PropertaDatabase.getInstance(context)
+    }
+    val scope = rememberCoroutineScope()
+    val english = selectedLanguage == "en"
+
+    var busy by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("") }
+    var pendingRestore by remember { mutableStateOf<String?>(null) }
+
+    val createBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                busy = true
+                status = if (english) "Creating backup..." else "Membuat backup..."
+
+                try {
+                    val json = PropertaBackup.export(database)
+
+                    withContext(Dispatchers.IO) {
+                        val output = context.contentResolver.openOutputStream(uri)
+                            ?: error("Tidak dapat membuka file tujuan.")
+
+                        output.bufferedWriter().use { it.write(json) }
+                    }
+
+                    status = if (english) {
+                        "Backup successfully saved."
+                    } else {
+                        "Backup berhasil disimpan."
+                    }
+                } catch (e: Exception) {
+                    status = (if (english) "Backup failed: " else "Backup gagal: ") +
+                        (e.message ?: "Unknown error")
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+
+    val openBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                busy = true
+                status = if (english) "Checking backup file..." else "Memeriksa file backup..."
+
+                try {
+                    val json = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)
+                            ?.bufferedReader()
+                            ?.use { it.readText() }
+                            ?: error("Tidak dapat membaca file.")
+                    }
+
+                    withContext(Dispatchers.IO) {
+                        PropertaBackup.validate(json)
+                    }
+
+                    pendingRestore = json
+                    status = if (english) {
+                        "Backup file is valid. Confirm before restoring."
+                    } else {
+                        "File backup valid. Konfirmasikan sebelum memulihkan."
+                    }
+                } catch (e: Exception) {
+                    status = (if (english) "Invalid backup: " else "Backup tidak valid: ") +
+                        (e.message ?: "Unknown error")
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+
+    if (pendingRestore != null) {
+        AlertDialog(
+            onDismissRequest = { pendingRestore = null },
+            title = {
+                Text(if (english) "Restore PROPERTA?" else "Pulihkan PROPERTA?")
+            },
+            text = {
+                Text(
+                    if (english) {
+                        "All current property, unit, tenant, and finance records will be replaced by the backup data. This action cannot be undone."
+                    } else {
+                        "Seluruh data properti, unit, penyewa, dan keuangan saat ini akan diganti dengan data dari backup. Tindakan ini tidak dapat dibatalkan."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val json = pendingRestore ?: return@TextButton
+                        pendingRestore = null
+
+                        scope.launch {
+                            busy = true
+                            status = if (english) "Restoring data..." else "Memulihkan data..."
+
+                            try {
+                                PropertaBackup.restore(database, json)
+                                status = if (english) {
+                                    "Restore completed successfully."
+                                } else {
+                                    "Restore berhasil. Data telah dipulihkan."
+                                }
+                            } catch (e: Exception) {
+                                status = (if (english) "Restore failed: " else "Restore gagal: ") +
+                                    (e.message ?: "Unknown error")
+                            } finally {
+                                busy = false
+                            }
+                        }
+                    }
+                ) {
+                    Text(if (english) "Restore" else "Pulihkan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestore = null }) {
+                    Text(if (english) "Cancel" else "Batal")
+                }
+            }
+        )
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = if (english) "More" else "Lainnya",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    if (english) "Language / Bahasa" else "Bahasa / Language",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FilterChip(
+                        selected = selectedLanguage == "id",
+                        onClick = { onLanguageSelected("id") },
+                        label = { Text("Indonesia") }
+                    )
+                    FilterChip(
+                        selected = selectedLanguage == "en",
+                        onClick = { onLanguageSelected("en") },
+                        label = { Text("English") }
+                    )
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    if (english) "Backup & Restore" else "Backup & Pemulihan",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+
+                Text(
+                    if (english) {
+                        "Save all eight PROPERTA data tables to a JSON file, or restore them from a previous backup."
+                    } else {
+                        "Simpan seluruh delapan tabel data PROPERTA ke file JSON, atau pulihkan dari file backup sebelumnya."
+                    },
+                    color = MutedText
+                )
+
+                Button(
+                    onClick = {
+                        createBackup.launch("PROPERTA-backup.json")
+                    },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (english) "Create Backup" else "Buat Backup")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        openBackup.launch(
+                            arrayOf("application/json", "application/octet-stream", "*/*")
+                        )
+                    },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (english) "Restore from File" else "Pulihkan dari File")
+                }
+
+                if (busy) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
+                if (status.isNotBlank()) {
+                    Text(
+                        text = status,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text(
+                    "PROPERTA",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+                Text(
+                    if (english) "Property Management Application" else
+                        "Aplikasi Manajemen Properti",
+                    color = MutedText,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+                Text(
+                    "Version 0.1.0",
+                    color = MutedText,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     }
 }

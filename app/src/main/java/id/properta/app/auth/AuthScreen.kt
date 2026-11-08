@@ -34,9 +34,10 @@ private val AuthBlue = Color(0xFF155EEF)
 private val AuthCyan = Color(0xFF22D3EE)
 
 @Composable
-fun AuthScreen(onAuthenticated: () -> Unit) {
+fun AuthScreen(language: String = "id", onAuthenticated: () -> Unit) {
     val context = LocalContext.current
     val auth = remember(context) { LocalAuth(context) }
+    val isEnglish = language == "en"
 
     var introFinished by remember { mutableStateOf(false) }
     var isSetup by remember { mutableStateOf(!auth.isSetup()) }
@@ -58,7 +59,12 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(AuthNavy, Color(0xFF082A58), AuthBlue)
+                    listOf(
+                    Color(0xFF041126),
+                    Color(0xFF082A58),
+                    Color(0xFF123F78),
+                    Color(0xFF061630)
+                )
                 )
             ),
         contentAlignment = Alignment.Center
@@ -141,7 +147,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     letterSpacing = 3.sp
                 )
                 Text(
-                    "Kelola Properti, Raih Lebih Banyak.",
+                    if (isEnglish) "Manage Properties, Achieve More." else "Kelola Properti, Raih Lebih Banyak.",
                     color = AuthCyan,
                     textAlign = TextAlign.Center,
                     fontSize = 13.sp
@@ -168,16 +174,16 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        if (isSetup) "Buat akun administrator"
-                        else "Selamat datang kembali",
+                        if (isSetup) if (isEnglish) "Create administrator account" else "Buat akun administrator"
+                        else if (isEnglish) "Welcome back" else "Selamat datang kembali",
                         fontSize = 23.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         if (isSetup)
-                            "Buat akun untuk mengamankan data PROPERTA di perangkat ini."
+                            if (isEnglish) "Create an account to secure PROPERTA data on this device." else "Buat akun untuk mengamankan data PROPERTA di perangkat ini."
                         else
-                            "Masuk untuk melanjutkan pengelolaan properti Anda.",
+                            if (isEnglish) "Sign in to continue managing your properties." else "Masuk untuk melanjutkan pengelolaan properti Anda.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
@@ -185,7 +191,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Username") },
+                        label = { Text(if (isEnglish) "Username" else "Username") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -194,7 +200,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         value = password,
                         onValueChange = { password = it },
                         label = {
-                            Text("Kata sandi")
+                            Text(if (isEnglish) "Password" else "Kata sandi")
                         },
                         singleLine = true,
                         visualTransformation = if (showPassword)
@@ -205,7 +211,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         ),
                         trailingIcon = {
                             TextButton(onClick = { showPassword = !showPassword }) {
-                                Text(if (showPassword) "Sembunyikan" else "Lihat")
+                                Text(if (showPassword) if (isEnglish) "Hide" else "Sembunyikan" else if (isEnglish) "Show" else "Lihat")
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -218,7 +224,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                                 onCheckedChange = { rememberMe = it }
                             )
                             Text(
-                                "Ingat saya",
+                                if (isEnglish) "Remember me" else "Ingat saya",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -228,7 +234,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
-                            label = { Text("Ulangi kata sandi") },
+                            label = { Text(if (isEnglish) "Confirm password" else "Ulangi kata sandi") },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(
@@ -252,13 +258,13 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                             message = ""
 
                             if (username.isBlank() || password.isBlank()) {
-                                message = "Username dan kata sandi wajib diisi."
+                                message = if (isEnglish) "Username and password are required." else "Username dan kata sandi wajib diisi."
                                 return@Button
                             }
 
                             if (isSetup) {
                                 if (password != confirmPassword) {
-                                    message = "Konfirmasi kata sandi belum cocok."
+                                    message = if (isEnglish) "Passwords do not match." else "Konfirmasi kata sandi belum cocok."
                                     return@Button
                                 }
 
@@ -273,9 +279,9 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                                     isSetup = false
                                     password = ""
                                     confirmPassword = ""
-                                    message = "Akun dibuat. Silakan login."
+                                    message = if (isEnglish) "Account created. Please sign in." else "Akun dibuat. Silakan login."
                                 } else {
-                                    message = "Akun gagal dibuat. Coba lagi."
+                                    message = if (isEnglish) "Could not create account. Please try again." else "Akun gagal dibuat. Coba lagi."
                                 }
                             } else {
                                 busy = true
@@ -290,7 +296,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                                     password = ""
                                     onAuthenticated()
                                 } else {
-                                    message = "Username atau kata sandi salah."
+                                    message = if (isEnglish) "Incorrect username or password." else "Username atau kata sandi salah."
                                     password = ""
                                 }
                             }
@@ -305,15 +311,15 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                         )
                     ) {
                         Text(
-                            if (busy) "Memproses..."
-                            else if (isSetup) "Buat akun"
-                            else "Masuk",
+                            if (busy) if (isEnglish) "Processing..." else "Memproses..."
+                            else if (isSetup) if (isEnglish) "Create account" else "Buat akun"
+                            else if (isEnglish) "Sign in" else "Masuk",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
                     Text(
-                        "Data akun tersimpan secara lokal di perangkat ini.",
+                        if (isEnglish) "Account data is stored locally on this device." else "Data akun tersimpan secara lokal di perangkat ini.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         textAlign = TextAlign.Center,
